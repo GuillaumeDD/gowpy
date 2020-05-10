@@ -81,7 +81,7 @@ Graph-of-words can be leveraged to extract an automatically adaptative number of
 cohesive keywords from a text document in an unsupervised fashion [[2,3]](#references).
 
 ```python
-from gowpy.summarization.unsupervised import GoWKeywordExtractor
+from gowpy.summarization.unsupervised import KcoreKeywordExtractor
 
 # Initialization of the keyword extractor
 extractor_kw = GoWKeywordExtractor(directed=False, window_size=4)
@@ -318,20 +318,20 @@ grid_search = GridSearchCV(pipeline,
 Detailed explanations, evaluations and discussions can be found in these papers:
 - Information retrieval (TW-IDF)
    + [0] [Graph-of-word and TW-IDF: New Approach to Ad Hoc IR](https://dl.acm.org/doi/abs/10.1145/2505515.2505671).
-     *Rousseau, François, and Michalis Vazirgiannis*.
+     *Rousseau, François, and Vazirgiannis, Michalis *.
      *Proceedings of the 22nd ACM international conference on Information & Knowledge Management*.(**CIKM 2013**)
 - Document classification with frequent subgraphs
    + [1] [Text Categorization as a Graph Classification Problem](http://www.aclweb.org/anthology/P15-1164).
-      *Rousseau, François, Emmanouil Kiagias, and Michalis Vazirgiannis*.
+      *Rousseau, François, Kiagias, Emmanouil and Vazirgiannis, Michalis *.
       *Proceedings of the 53rd Annual Meeting of the Association for Computational Linguistics and the 7th International 
       Joint Conference on Natural Language Processing* (**ACL 2015**)
 - Keyword extraction from graph-of-words
    + [2] [Main Core Retention on Graph-of-words for Single-Document Keyword Extraction](https://link.springer.com/chapter/10.1007/978-3-319-16354-3_42).
-     *Rousseau, François, and Michalis Vazirgiannis*.
+     *Rousseau, François, and Vazirgiannis, Michalis*.
      *Proceedings of the 37th European Conference on Information Retrieval*.
      (**ECIR 2015**)
    + [3] [A Graph Degeneracy-based Approach to Keyword Extraction](https://www.aclweb.org/anthology/D16-1191/).
-     *Tiwier, Antoine Tixier, Malliaros Fragkiskos, and Vazirgiannis, Michalis*.
+     *Tixier, Antoine, Malliaros, Fragkiskos, and Vazirgiannis, Michalis*.
      *Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing*.
      (**EMNLP 2016**)
    
@@ -342,7 +342,8 @@ This library involves the following algorithms:
    + VF2 algorithm for subgraph isomorphism matching: [VF2 algorithm for subgraph isomorphism from NetworkX](https://networkx.github.io/documentation/stable/reference/algorithms/isomorphism.vf2.html)
 - Graph degeneracy
    + [k-core decomposition with NetworkX](https://networkx.github.io/documentation/stable/reference/algorithms/core.html)
-
+   + Custom implementation of generalized k-core decomposition for weighted graph from 
+     ["Generalized Cores" V. Batagelj, M. Zaveršnik (2002)](https://arxiv.org/abs/cs/0202039)
 
 ## License
 Released under the 3-Clause BSD license (see [LICENSE file](./LICENSE))

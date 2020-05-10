@@ -1,6 +1,8 @@
 import numpy as np
 from typing import Sequence, Optional
 
+import warnings
+
 import gowpy.gow.io
 from gowpy.gow.builder import GraphOfWords
 from gowpy.gow.typing import Tokenizer
@@ -27,8 +29,15 @@ class GoWMiner(GoWBuilder):
                  directed: bool = False,
                  window_size: int = 4,
                  tokenizer: Tokenizer = None):
+        if directed:
+            warnings.warn(f"Mining directed graph-of-words but gBolt works only for undirected graphs.",
+                          UserWarning)
         # /!\ Edge labeling is important for IO
-        super().__init__(directed, window_size, tokenizer, edge_labeling=True)
+        super().__init__(directed=directed,
+                         weighted=False,
+                         window_size=window_size,
+                         tokenizer=tokenizer,
+                         edge_labeling=True)
         self.frequent_subgraphs: Optional[Sequence[GraphOfWords]] = None
 
     # TODO generate a real formal python representation
@@ -39,6 +48,7 @@ class GoWMiner(GoWBuilder):
             len_frequent_subgraphs = len(self.frequent_subgraphs)
         return f'''Graph-of-word miner:
         - is_directed: {self.directed}
+        - is_weighted: {False}
         - window_size: {self.window_size}
         - edge_labeling: {self.edge_labeling}
 

@@ -1,5 +1,7 @@
 from typing import Sequence, Dict, Optional, Union, List, Callable
 
+from collections import defaultdict
+
 from gowpy.gow.typing import Token, Tokenized_document, Tokenizer, \
     Edge, Edge_with_code, Edge_label, Edges, Nodes
 import networkx as nx
@@ -44,16 +46,21 @@ class GraphOfWords(object):
                  get_token: Callable[[int], str],
                  get_label: Optional[Callable[[int], Edge_label]],
                  freq: int = 1,
-                 directed: bool = False):
+                 directed: bool = False,
+                 weights: Optional[Dict[Edge, int]] = None):
         self.get_token = get_token
         self.get_label = get_label
 
         self.nodes = nodes
         self.edges = edges
         self.directed = directed
+        self.weights = weights
         self.freq = freq
 
         self.graph_: Optional[nx.Graph] = None
+
+    def is_weighted(self):
+        return self.weights is not None
 
     def is_edge_labeling(self):
         return self.get_label is not None
@@ -92,10 +99,17 @@ class GraphOfWords(object):
             [g.add_node(node, label=node) for node in self.nodes]
 
             if self.is_edge_labeling():
-                [g.add_edge(node_start_code, node_end_code, label=edge_code)
-                 for node_start_code, node_end_code, edge_code in self.edges]
+                if self.is_weighted():
+                    g.add_weighted_edges_from([(start, end, {'weight': self.weights[(start, end)],
+                                                             'label': code})
+                                               for start, end, code in self.edges])
+                else:
+                    [g.add_edge(start, end, label=code) for start, end, code in self.edges]
             else:
-                g.add_edges_from(self.edges)
+                if self.is_weighted():
+                    g.add_weighted_edges_from([(start, end, self.weights[(start, end)]) for start, end in self.edges])
+                else:
+                    g.add_edges_from(self.edges)
 
             self.graph_ = g
 
@@ -108,11 +122,19 @@ class GraphOfWords(object):
         [g.add_node(self.get_token(node)) for node in self.nodes]
 
         if self.is_edge_labeling():
-            [g.add_edge(self.get_token(node_start_code), self.get_token(node_end_code))
-             for node_start_code, node_end_code, _ in self.edges]
+            if self.is_weighted():
+                g.add_weighted_edges_from([(self.get_token(start), self.get_token(end),
+                                            {'weight': self.weights[(start, end)], 'label': code})
+                                           for start, end, code in self.edges])
+            else:
+                [g.add_edge(self.get_token(start), self.get_token(end), label=code) for start, end, code in self.edges]
         else:
-            g.add_edges_from([(self.get_token(node_start_code), self.get_token(node_end_code))
-                              for node_start_code, node_end_code in self.edges])
+            if self.is_weighted():
+                g.add_weighted_edges_from([(self.get_token(start), self.get_token(end),
+                                            self.weights[(start, end)]) for start, end in self.edges])
+            else:
+                g.add_edges_from([(self.get_token(node_start_code), self.get_token(node_end_code))
+                                  for node_start_code, node_end_code in self.edges])
 
         return g
 
@@ -124,6 +146,8 @@ class GoWBuilder(object):
     ----------
     directed : boolean, False by default
         If True, the graph-of-words is directed, else undirected
+    weighted : boolean, False by default
+        If True, the edges of the graph-of-words are weighted by their frequency, else they are not weighted
     window_size : int, default=4
         Size of the window (in token) to build the graph-of-words.
     edge_labeling : boolean, False by default
@@ -134,11 +158,13 @@ class GoWBuilder(object):
 
     def __init__(self,
                  directed: bool = False,
+                 weighted: bool = False,
                  window_size: int = 4,
                  tokenizer: Tokenizer = None,
                  edge_labeling: bool = False):
         # Graph parameters
         self.directed: bool = directed
+        self.weighted: bool = weighted
         self.window_size: int = window_size
 
         self.corpus_size: Optional[int] = None
@@ -156,7 +182,8 @@ class GoWBuilder(object):
     # TODO generate a real formal python representation
     def __repr__(self):
         return f'''Graph-of-word builder:
-        - is_directed: {self.directed}
+        - is directed: {self.directed}
+        - is weighted: {self.weighted}
         - window_size: {self.window_size}
         - edge_labeling: {self.edge_labeling}
 
@@ -231,32 +258,64 @@ class GoWBuilder(object):
         N = len(tokens)
 
         edges = set()
-        if self.edge_labeling:
-            for j in range(N):
-                for i in range(max(j - self.window_size + 1, 0), j):
-                    # Only keep edges between two *different* tokens
-                    if token_ids[i] != token_ids[j]:
-                        edge = (token_ids[i], token_ids[j])
-                        edge_code = self.get_edge_code_(edge)
-                        if self.directed:
-                            edges.add(mk_directed_edge(token_ids[i], token_ids[j], edge_code))
-                        else:
-                            edges.add(mk_undirected_edge(token_ids[i], token_ids[j], edge_code))
+        weights = defaultdict(int) if self.weighted else None
+        if self.weighted:
+            def add_weights(edge):
+                weights[edge] += 1
         else:
-            for j in range(N):
-                for i in range(max(j - self.window_size + 1, 0), j):
-                    # Only keep edges between two *different* tokens
-                    if token_ids[i] != token_ids[j]:
-                        if self.directed:
-                            edges.add(mk_directed_edge(token_ids[i], token_ids[j]))
-                        else:
-                            edges.add(mk_undirected_edge(token_ids[i], token_ids[j]))
+            def add_weights(edge):
+                pass
+
+        if self.edge_labeling:
+            if self.directed:
+                for j in range(N):
+                    for i in range(max(j - self.window_size + 1, 0), j):
+                        # Only keep edges between two *different* tokens
+                        if token_ids[i] != token_ids[j]:
+                            edge = (token_ids[i], token_ids[j])
+                            edge_code = self.get_edge_code_(edge)
+
+                            start, end, code = mk_directed_edge(token_ids[i], token_ids[j], edge_code)
+                            edges.add((start, end, code))
+                            add_weights((start, end))
+            else:  # undirected
+                for j in range(N):
+                    for i in range(max(j - self.window_size + 1, 0), j):
+                        # Only keep edges between two *different* tokens
+                        if token_ids[i] != token_ids[j]:
+                            edge = (token_ids[i], token_ids[j])
+                            edge_code = self.get_edge_code_(edge)
+
+                            start, end, code = mk_undirected_edge(token_ids[i], token_ids[j], edge_code)
+                            edges.add((start, end, code))
+                            add_weights((start, end))
+
+        else:  # edge_labeling deactivated
+            if self.directed:
+                for j in range(N):
+                    for i in range(max(j - self.window_size + 1, 0), j):
+                        # Only keep edges between two *different* tokens
+                        if token_ids[i] != token_ids[j]:
+                            edge = mk_directed_edge(token_ids[i], token_ids[j])
+                            edges.add(edge)
+                            add_weights(edge)
+
+            else:  # undirected
+                for j in range(N):
+                    for i in range(max(j - self.window_size + 1, 0), j):
+                        # Only keep edges between two *different* tokens
+                        if token_ids[i] != token_ids[j]:
+                            edge = mk_undirected_edge(token_ids[i], token_ids[j])
+                            edges.add(edge)
+                            add_weights(edge)
 
         return GraphOfWords(nodes=nodes,
                             edges=edges,
                             get_label=self.get_label_ if self.edge_labeling else None,
                             get_token=self.get_token_,
-                            directed=self.directed)
+                            directed=self.directed,
+                            # disabling defaultdict behavior
+                            weights=dict(weights) if self.weighted else None)
 
     def compute_gow_from_document(self, raw_document: str) -> GraphOfWords:
         """Computes a graph-of-words representation from a document"""
