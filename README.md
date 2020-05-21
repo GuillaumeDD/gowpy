@@ -3,10 +3,19 @@
 A very simple library for exploiting graph-of-words in NLP. 
 Currently at version **0.1.0** (alpha).
 
+The graph-of-words model has been shown to be an interesting alternative
+to the widespread bag-of-words model by challenging its term independence 
+assumption [[1,2]](#references).
+In particular, the graph-of-words model makes it possible to capture term 
+dependence and term order.
+If you are looking for an efficient alternative to TF-IDF, give graph-of-words 
+a try on your dataset!
+
 gowpy leverages graph-of-words representation in order to do:
-- **document classification** in a [scikit-learn](https://scikit-learn.org)-like 
-  way via useful vectorizers, and
-- **keyword extraction** from a document. 
+- [**document classification**](#classification-with-tw-idf-a-graph-based-term-weighting-score)
+  in a [scikit-learn](https://scikit-learn.org)-like way via useful vectorizers, and
+- unsupervised [**keyword extraction**](#unsupervised-keywords-extraction) from a 
+  single document. 
 
 ## Quick Start
 ### Requirements and Installation
@@ -80,18 +89,28 @@ nx.draw(g, **options)
 Graph-of-words can be leveraged to extract an automatically adaptative number of
 cohesive keywords from a text document in an unsupervised fashion [[2,3]](#references).
 
+gowpy implements the graph-of-words methods presented in [[3]](#references):
+- the three batch keyword extraction methods based on k-core, and
+- the word-level keyword extraction method CoreRank.
+
+See this [example notebook](./examples/keyword_extraction-paper_example.ipynb)
+that repoduces the running example of the paper demonstrating all the methods.
+
+For short and medium size documents, both the "density" and the "inflexion" methods
+have been showing strong performance. Here is how you can use the "density" method: 
 ```python
 from gowpy.summarization.unsupervised import KcoreKeywordExtractor
 
-# Initialization of the keyword extractor
-extractor_kw = GoWKeywordExtractor(directed=False, window_size=4)
+extractor_kw = KcoreKeywordExtractor(directed=False, weighted=True, window_size=4,
+                                     selection_method='density')
 
 # 
 # Note that preprocessing is particularly important for keyword extraction
 # in order to keep and normalize important terms such as adjectives and nouns.
 #
 # An already preprocessed text in which to extract keywords
-preprocessed_text = """gowpy simple framework exploiting graph-of-words nlp gowpy 
+
+preprocessed_text = """gowpy simple library exploiting graph-of-words nlp gowpy 
 leverages graph-of-words representation document classification keyword extraction 
 document"""
 
@@ -102,12 +121,41 @@ Returns:
 ```text
 [('gowpy', 4),
  ('simple', 4),
- ('framework', 4),
+ ('library', 4),
  ('exploiting', 4),
  ('graph-of-words', 4),
- ('nlp', 4)]
+ ('nlp', 4),
+ ('leverages', 4),
+ ('representation', 4),
+ ('document', 4),
+ ('classification', 4),
+ ('keyword', 4),
+ ('extraction', 4)]
 ```
 
+For longer documents, the CoreRank method has been shown to be more appropriate.
+This method takes an optional parameter that can specify the number of keywords
+to extract:
+```python
+from gowpy.summarization.unsupervised import CoreRankKeywordExtractor
+
+extractor_kw_cr = CoreRankKeywordExtractor(directed=False, weighted=True, window_size=4)
+
+preprocessed_text = """gowpy simple library exploiting graph-of-words nlp gowpy 
+leverages graph-of-words representation document classification keyword extraction 
+document"""
+
+extractor_kw_cr.extract(preprocessed_text, n=5)
+```
+
+Returns:
+```text
+[('graph-of-words', 36),
+ ('gowpy', 28),
+ ('representation', 24),
+ ('document', 24),
+ ('library', 20)]
+```
 
 #### Classification with TW-IDF: a graph-based term weighting score
 TW-IDF [[0]](#references) challenges the term independence assumption behind 
