@@ -17,6 +17,9 @@ gowpy leverages graph-of-words representation in order to do:
 - unsupervised [**keyword extraction**](#unsupervised-keywords-extraction) from a 
   single document. 
 
+Detailed explanations, evaluations and discussions can be found in 
+the [reference section](#references).
+
 ## Quick Start
 ### Requirements and Installation
 This project is based on Python 3.6+, [scikit-learn](https://github.com/scikit-learn/scikit-learn) and 
@@ -384,7 +387,7 @@ Detailed explanations, evaluations and discussions can be found in these papers:
      (**EMNLP 2016**)
    
 This library involves the following algorithms:
-- Frequent subgraph Mining (**currently not included in this library**)
+- Frequent subgraph mining (**currently not included in this library**)
    + gSpan algorithm implementation for subgraph mining: [gBolt--very fast implementation for gSpan algorithm in data mining ](https://github.com/Jokeren/gBolt)
 - Subgraph matching
    + VF2 algorithm for subgraph isomorphism matching: [VF2 algorithm for subgraph isomorphism from NetworkX](https://networkx.github.io/documentation/stable/reference/algorithms/isomorphism.vf2.html)
