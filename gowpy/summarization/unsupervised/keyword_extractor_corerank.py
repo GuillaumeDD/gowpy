@@ -53,6 +53,17 @@ class CoreRankKeywordExtractor(object):
 
     def extract(self, document: str,
                 n: Optional[Union[int, float]] = None) -> Sequence[Tuple[str, float]]:
+        """Extracts keywords from the given document
+
+        Parameters
+        ----------
+        document : string
+           The document in which to extract keywords
+        n : int or float in [0.0, 1.0] or None (default)
+            If None the number of extracted keywords is automatically computed via the elbow method, else
+            extraction the desired number of keywords (int) or extraction of the desired proportion of
+            keywords (float)
+        """
         # Building the graph-of-words
         gow = self.builder.compute_gow_from_document(document)
         graph = gow.to_graph()

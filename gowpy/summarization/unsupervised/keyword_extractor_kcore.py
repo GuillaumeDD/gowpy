@@ -66,6 +66,7 @@ class KcoreKeywordExtractor(object):
         self.selection_method = selection_method
 
     def extract(self, document: str) -> Sequence[Tuple[str, float]]:
+        """Extracts keywords from the given document"""
         if self.selection_method == GOW_KEYWORD_EXTRACTION_KCORE:
             return self.extract_k_core(document)
         elif self.selection_method == GOW_KEYWORD_EXTRACTION_DENSITY:
