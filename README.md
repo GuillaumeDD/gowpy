@@ -1,6 +1,6 @@
 # gowpy
 
-A very simple framework for exploiting graph-of-words in NLP. 
+A very simple library for exploiting graph-of-words in NLP. 
 Currently at version **0.1.0** (alpha).
 
 gowpy leverages graph-of-words representation in order to do:
@@ -44,7 +44,7 @@ from gowpy.gow.builder import GoWBuilder
 #
 builder = GoWBuilder(directed=True, window_size=4)
 
-text = """gowpy is a simple framework for exploiting graph-of-words in nlp gowpy 
+text = """gowpy is a simple library for exploiting graph-of-words in nlp gowpy 
 leverages graph-of-words representation for document classification and for keyword extraction 
 from a document"""
 
@@ -318,11 +318,11 @@ grid_search = GridSearchCV(pipeline,
 Detailed explanations, evaluations and discussions can be found in these papers:
 - Information retrieval (TW-IDF)
    + [0] [Graph-of-word and TW-IDF: New Approach to Ad Hoc IR](https://dl.acm.org/doi/abs/10.1145/2505515.2505671).
-     *Rousseau, François, and Vazirgiannis, Michalis *.
+     *Rousseau, François, and Vazirgiannis, Michalis*.
      *Proceedings of the 22nd ACM international conference on Information & Knowledge Management*.(**CIKM 2013**)
 - Document classification with frequent subgraphs
    + [1] [Text Categorization as a Graph Classification Problem](http://www.aclweb.org/anthology/P15-1164).
-      *Rousseau, François, Kiagias, Emmanouil and Vazirgiannis, Michalis *.
+      *Rousseau, François, Kiagias, Emmanouil and Vazirgiannis, Michalis*.
       *Proceedings of the 53rd Annual Meeting of the Association for Computational Linguistics and the 7th International 
       Joint Conference on Natural Language Processing* (**ACL 2015**)
 - Keyword extraction from graph-of-words
