@@ -73,7 +73,9 @@ class KcoreKeywordExtractor(object):
         elif self.selection_method == GOW_KEYWORD_EXTRACTION_INFLEXION:
             return self.extract_with_inflexion(document)
         else:
-            warnings.warn(f"Unknown value: {self.selection_method}. Using default: {GOW_KEYWORD_EXTRACTION_KCORE}",
+            all_values = [GOW_KEYWORD_EXTRACTION_KCORE, GOW_KEYWORD_EXTRACTION_DENSITY, GOW_KEYWORD_EXTRACTION_INFLEXION]
+            warnings.warn(f"Unknown value: {self.selection_method}. Using default: {GOW_KEYWORD_EXTRACTION_KCORE}"
+                          f"Possible values: {all_values}",
                           UserWarning)
             return self.extract_k_core(document)
 
@@ -111,46 +113,49 @@ class KcoreKeywordExtractor(object):
         """
         # Building the graph-of-words
         gow = self.builder.compute_gow_from_document(document)
-        graph = gow.to_graph()
+        if len(gow.nodes) > 0:
+            graph = gow.to_graph()
 
-        # Computation of the k-cores
-        if self.builder.weighted:
-            kcore_number = core_number_weighted(graph)
+            # Computation of the k-cores
+            if self.builder.weighted:
+                kcore_number = core_number_weighted(graph)
+            else:
+                kcore_number = nx_core_number(graph)
+
+            # Sorted sequence of k for each k-core
+            ks = sorted({k for _, k in kcore_number.items()})
+
+            # Storage for (i, density)
+            densities = []
+            # Mapping between i and the k-core value
+            i_to_k = {}
+            # Storage of k-core graph for each k
+            k_graphs = {}
+
+            # Going DOWN the k-core and computation of the k-core densities
+            for i, k in enumerate(reversed(ks)):
+                g_k = k_core(graph, k=k, core_number=kcore_number)
+                k_graphs[k] = g_k
+                i_to_k[i] = k
+                densities.append((i, density(g_k)))
+
+            # Retrieving the most appropriate density via the elbow method
+            i_k_best = elbow(densities)
+            # Retrieving the corresponding k
+            k_best = i_to_k[i_k_best]
+
+            # Retrieving the keywords for k-core with k=k_best
+            keywords = []
+            best_graph = k_graphs[k_best]
+            for v in best_graph.nodes:
+                token_code = best_graph.nodes[v]['label']
+                token = self.builder.get_token_(token_code)
+                k = kcore_number[v]
+                keywords.append((token, k))
+
+            return sorted(keywords, key=lambda p: p[1], reverse=True)
         else:
-            kcore_number = nx_core_number(graph)
-
-        # Sorted sequence of k for each k-core
-        ks = sorted({k for _, k in kcore_number.items()})
-
-        # Storage for (i, density)
-        densities = []
-        # Mapping between i and the k-core value
-        i_to_k = {}
-        # Storage of k-core graph for each k
-        k_graphs = {}
-
-        # Going DOWN the k-core and computation of the k-core densities
-        for i, k in enumerate(reversed(ks)):
-            g_k = k_core(graph, k=k, core_number=kcore_number)
-            k_graphs[k] = g_k
-            i_to_k[i] = k
-            densities.append((i, density(g_k)))
-
-        # Retrieving the most appropriate density via the elbow method
-        i_k_best = elbow(densities)
-        # Retrieving the corresponding k
-        k_best = i_to_k[i_k_best]
-
-        # Retrieving the keywords for k-core with k=k_best
-        keywords = []
-        best_graph = k_graphs[k_best]
-        for v in best_graph.nodes:
-            token_code = best_graph.nodes[v]['label']
-            token = self.builder.get_token_(token_code)
-            k = kcore_number[v]
-            keywords.append((token, k))
-
-        return sorted(keywords, key=lambda p: p[1], reverse=True)
+            return []
 
     def extract_with_inflexion(self, document: str) -> Sequence[Tuple[str, float]]:
         """Extraction of keywords corresponding to the nodes of the k-core selected from k-shell size differences
@@ -159,43 +164,46 @@ class KcoreKeywordExtractor(object):
         """
         # Building the graph-of-words
         gow = self.builder.compute_gow_from_document(document)
-        graph = gow.to_graph()
+        if len(gow.nodes) > 0:
+            graph = gow.to_graph()
 
-        # Computation of the k-cores
-        if self.builder.weighted:
-            kcore_number = core_number_weighted(graph)
+            # Computation of the k-cores
+            if self.builder.weighted:
+                kcore_number = core_number_weighted(graph)
+            else:
+                kcore_number = nx_core_number(graph)
+
+            # Sorted sequence of k for each k-core descending
+            ks = sorted({k for _, k in kcore_number.items()}, reverse=True)
+
+            # Going down the k-core while k-shell size is increasing
+            k_best = None
+            previous = None
+            for k1, k2 in zip(ks, ks[1:]):
+                g_k1 = k_shell(graph, k=k1, core_number=kcore_number)
+                g_k2 = k_shell(graph, k=k2, core_number=kcore_number)
+                len_k1 = len(g_k1.nodes)
+                len_k2 = len(g_k2.nodes)
+                current = len_k2 - len_k1
+
+                if previous is not None:
+                    if (previous < 0) and (current > 0):
+                        k_best = k2
+                        break
+                previous = current
+
+            if k_best is None:
+                k_best = ks[0]
+
+            # Retrieving the keywords for k-core with k=k_best
+            keywords = []
+            best_graph = k_core(graph, k=k_best, core_number=kcore_number)
+            for v in best_graph.nodes:
+                token_code = best_graph.nodes[v]['label']
+                token = self.builder.get_token_(token_code)
+                k = kcore_number[v]
+                keywords.append((token, k))
+
+            return sorted(keywords, key=lambda p: p[1], reverse=True)
         else:
-            kcore_number = nx_core_number(graph)
-
-        # Sorted sequence of k for each k-core descending
-        ks = sorted({k for _, k in kcore_number.items()}, reverse=True)
-
-        # Going down the k-core while k-shell size is increasing
-        k_best = None
-        previous = None
-        for k1, k2 in zip(ks, ks[1:]):
-            g_k1 = k_shell(graph, k=k1, core_number=kcore_number)
-            g_k2 = k_shell(graph, k=k2, core_number=kcore_number)
-            len_k1 = len(g_k1.nodes)
-            len_k2 = len(g_k2.nodes)
-            current = len_k2 - len_k1
-
-            if previous is not None:
-                if (previous < 0) and (current > 0):
-                    k_best = k2
-                    break
-            previous = current
-
-        if k_best is None:
-            k_best = ks[0]
-
-        # Retrieving the keywords for k-core with k=k_best
-        keywords = []
-        best_graph = k_core(graph, k=k_best, core_number=kcore_number)
-        for v in best_graph.nodes:
-            token_code = best_graph.nodes[v]['label']
-            token = self.builder.get_token_(token_code)
-            k = kcore_number[v]
-            keywords.append((token, k))
-
-        return sorted(keywords, key=lambda p: p[1], reverse=True)
+            return []
