@@ -1,7 +1,7 @@
 # gowpy
 
 A very simple library for exploiting graph-of-words in NLP. 
-Currently at version **0.1.0** (alpha).
+Currently at version **0.2.0**.
 
 The graph-of-words model has been shown to be an interesting alternative
 to the widespread bag-of-words model by challenging its term independence 
