@@ -1,7 +1,9 @@
 # CHANGELOG
 
-## [0.2.0] - 2020-05-21
-This release adds new algorithms for keyword extraction.
+## [0.2.0] - 2020-06-14
+This release adds new algorithms for keyword extraction, 
+adds some example notebooks and 
+fixes some bugs.
 
 ### Graph-of-words representation
 Addition of edge weighting option in graph-of-words. The weight of an edge is
@@ -62,7 +64,14 @@ extractor_kw_cr.extract(preprocessed_text, n=5)
   (i.e. k-core algorithm for weighted graphs) from 
   ["Generalized Cores" V. Batagelj, M. Zaveršnik (2002)](https://arxiv.org/abs/cs/0202039)
 
+### Frequent Subgraphs
+- The `GoWMiner` can now be used to incrementally load results of more than one 
+  subgraph mining process.
+- Fix of a bug in the computation of the sparse matrix in the 
+  `GoWVectorizer` vectorizer.
+
 ### Misc
+- Addition of example notebooks
 - Update of the documentation
 
 ## [0.1.0] - 2020-05-03
