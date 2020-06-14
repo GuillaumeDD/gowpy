@@ -43,6 +43,11 @@ python setup.py install
 ```
 
 ### Example Usage
+#### Example Notebooks
+See the [examples/ directory](./examples/) for example of notebooks:
+- [Notebook 1: unsupervised keyword extraction](./examples/keyword_extraction-paper_example.ipynb)
+- [Notebook 2: multi-class classification with TW-IDF](./examples/classification-r8-twidf.ipynb)
+- [Notebook 3: multi-class classification with frequent subgraphs](./examples/classification-r8-frequent_subgraphs.ipynb)
 
 #### Building a Graph-of-Words from a Document
 
@@ -167,6 +172,9 @@ document (here an unweighted directed graph of terms), and by (ii) leveraging
 this new representation to replace the term frequency (TF) by graph-based term 
 weights (TW).  
 
+See this [example notebook](./examples/classification-r8-twidf.ipynb) for a 
+usage example of TW-IDF for a multi-class classification task.
+
 TW-IDF is accessible via a dedicated vectorizer:
 ```python
 from gowpy.feature_extraction.gow import TwidfVectorizer
@@ -237,6 +245,9 @@ Classification with frequent subgraphs happens in a 3-step process:
   of graph-of-words
 1. Mining the frequent subgraphs
 1. Loading the frequent subgraphs and exploiting them for classification
+
+See this [example notebook](./examples/classification-r8-frequent_subgraphs.ipynb)
+for a usage example of frequent subgraphs for a multi-class classification task.
 
 ##### Conversion of the corpus into a collection of graph-of-words
 The first step consists in turning the corpus into a graph-of-words and collection
