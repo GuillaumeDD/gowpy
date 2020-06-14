@@ -200,7 +200,9 @@ class GoWVectorizer(BaseEstimator):
                     data.append(1)
                 indptr.append(len(indices))
 
-            resulting_matrix = csr_matrix((data, indices, indptr), dtype=int)
+            resulting_matrix = csr_matrix((data, indices, indptr),
+                                          shape=(len(raw_documents), temp_num_features),
+                                          dtype=int)
         else:
             resulting_matrix = csr_matrix((len(raw_documents), 0))
         return resulting_matrix

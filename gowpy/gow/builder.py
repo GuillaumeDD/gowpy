@@ -51,13 +51,26 @@ class GraphOfWords(object):
         self.get_token = get_token
         self.get_label = get_label
 
-        self.nodes = nodes
-        self.edges = edges
+        self.nodes = frozenset(nodes)
+        self.edges = frozenset(edges)
         self.directed = directed
         self.weights = weights
         self.freq = freq
 
         self.graph_: Optional[nx.Graph] = None
+
+    def __members(self):
+        # TODO add weights in the members (beware, dict are unhashable)
+        return (self.nodes, self.edges, self.directed)
+
+    def __eq__(self, other):
+        if type(other) is type(self):
+            return self.__members() == other.__members()
+        else:
+            return False
+
+    def __hash__(self):
+        return hash(self.__members())
 
     def is_weighted(self):
         return self.weights is not None
@@ -167,7 +180,7 @@ class GoWBuilder(object):
         self.weighted: bool = weighted
         self.window_size: int = window_size
 
-        self.corpus_size: Optional[int] = None
+        self.corpus_size = 0
 
         self.tokenizer: Tokenizer = tokenizer if tokenizer is not None else default_tokenizer
 
@@ -243,7 +256,8 @@ class GoWBuilder(object):
             gow = self.compute_gow_from_document(raw_document)
             result_graph_of_words.append(gow)
 
-        self.corpus_size = len(result_graph_of_words)
+        # This method can be called several times, hence the accumulation
+        self.corpus_size += len(result_graph_of_words)
 
         return result_graph_of_words
 

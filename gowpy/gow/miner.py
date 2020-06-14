@@ -38,7 +38,7 @@ class GoWMiner(GoWBuilder):
                          window_size=window_size,
                          tokenizer=tokenizer,
                          edge_labeling=True)
-        self.frequent_subgraphs: Optional[Sequence[GraphOfWords]] = None
+        self.frequent_subgraphs: Sequence[GraphOfWords] = []
 
     # TODO generate a real formal python representation
     def __repr__(self):
@@ -61,9 +61,14 @@ class GoWMiner(GoWBuilder):
     def load_graphs(self,
                     input_file_subgraph: str,
                     input_file_frequent_nodes: str) -> None:
-        self.frequent_subgraphs = gowpy.gow.io.load_graphs(input_file_subgraph, input_file_frequent_nodes,
+        self.frequent_subgraphs.extend(gowpy.gow.io.load_graphs(input_file_subgraph, input_file_frequent_nodes,
                                                            self.get_token_, self.get_label_,
-                                                           self.directed)
+                                                           self.directed))
+        # This method can be called several times hence the need for ensuring uniqueness of frequent subgraphs
+        # set: to ensure uniqueness
+        # list: to ensure a unique traversal order
+        #
+        self.frequent_subgraphs = list(set(self.frequent_subgraphs))
 
     def stat_freq_per_pattern(self) -> np.array:
         """Computes the subgraph frequency series"""
