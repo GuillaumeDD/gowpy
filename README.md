@@ -1,12 +1,24 @@
 # gowpy
 
-A very simple framework for exploiting graph-of-words in NLP. 
-Currently at version **0.1.0** (alpha).
+A very simple library for exploiting graph-of-words in NLP. 
+Currently at version **0.2.0**.
+
+The graph-of-words model has been shown to be an interesting alternative
+to the widespread bag-of-words model by challenging its term independence 
+assumption [[1,2]](#references).
+In particular, the graph-of-words model makes it possible to capture term 
+dependence and term order.
+If you are looking for an efficient alternative to TF-IDF, give graph-of-words 
+a try on your dataset!
 
 gowpy leverages graph-of-words representation in order to do:
-- **document classification** in a [scikit-learn](https://scikit-learn.org)-like 
-  way via useful vectorizers, and
-- **keyword extraction** from a document. 
+- [**document classification**](#classification-with-tw-idf-a-graph-based-term-weighting-score)
+  in a [scikit-learn](https://scikit-learn.org)-like way via useful vectorizers, and
+- unsupervised [**keyword extraction**](#unsupervised-keywords-extraction) from a 
+  single document. 
+
+Detailed explanations, evaluations and discussions can be found in 
+the [reference section](#references).
 
 ## Quick Start
 ### Requirements and Installation
@@ -31,6 +43,11 @@ python setup.py install
 ```
 
 ### Example Usage
+#### Example Notebooks
+See the [examples/ directory](./examples/) for example of notebooks:
+- [Notebook 1: unsupervised keyword extraction](./examples/keyword_extraction-paper_example.ipynb)
+- [Notebook 2: multi-class classification with TW-IDF](./examples/classification-r8-twidf.ipynb)
+- [Notebook 3: multi-class classification with frequent subgraphs](./examples/classification-r8-frequent_subgraphs.ipynb)
 
 #### Building a Graph-of-Words from a Document
 
@@ -44,7 +61,7 @@ from gowpy.gow.builder import GoWBuilder
 #
 builder = GoWBuilder(directed=True, window_size=4)
 
-text = """gowpy is a simple framework for exploiting graph-of-words in nlp gowpy 
+text = """gowpy is a simple library for exploiting graph-of-words in nlp gowpy 
 leverages graph-of-words representation for document classification and for keyword extraction 
 from a document"""
 
@@ -80,18 +97,28 @@ nx.draw(g, **options)
 Graph-of-words can be leveraged to extract an automatically adaptative number of
 cohesive keywords from a text document in an unsupervised fashion [[2,3]](#references).
 
-```python
-from gowpy.summarization.unsupervised import GoWKeywordExtractor
+gowpy implements the graph-of-words methods presented in [[3]](#references):
+- the three batch keyword extraction methods based on k-core, and
+- the word-level keyword extraction method CoreRank.
 
-# Initialization of the keyword extractor
-extractor_kw = GoWKeywordExtractor(directed=False, window_size=4)
+See this [example notebook](./examples/keyword_extraction-paper_example.ipynb)
+that repoduces the running example of the paper demonstrating all the methods.
+
+For short and medium size documents, both the "density" and the "inflexion" methods
+have been showing strong performance. Here is how you can use the "density" method: 
+```python
+from gowpy.summarization.unsupervised import KcoreKeywordExtractor
+
+extractor_kw = KcoreKeywordExtractor(directed=False, weighted=True, window_size=4,
+                                     selection_method='density')
 
 # 
 # Note that preprocessing is particularly important for keyword extraction
 # in order to keep and normalize important terms such as adjectives and nouns.
 #
 # An already preprocessed text in which to extract keywords
-preprocessed_text = """gowpy simple framework exploiting graph-of-words nlp gowpy 
+
+preprocessed_text = """gowpy simple library exploiting graph-of-words nlp gowpy 
 leverages graph-of-words representation document classification keyword extraction 
 document"""
 
@@ -102,12 +129,41 @@ Returns:
 ```text
 [('gowpy', 4),
  ('simple', 4),
- ('framework', 4),
+ ('library', 4),
  ('exploiting', 4),
  ('graph-of-words', 4),
- ('nlp', 4)]
+ ('nlp', 4),
+ ('leverages', 4),
+ ('representation', 4),
+ ('document', 4),
+ ('classification', 4),
+ ('keyword', 4),
+ ('extraction', 4)]
 ```
 
+For longer documents, the CoreRank method has been shown to be more appropriate.
+This method takes an optional parameter that can specify the number of keywords
+to extract:
+```python
+from gowpy.summarization.unsupervised import CoreRankKeywordExtractor
+
+extractor_kw_cr = CoreRankKeywordExtractor(directed=False, weighted=True, window_size=4)
+
+preprocessed_text = """gowpy simple library exploiting graph-of-words nlp gowpy 
+leverages graph-of-words representation document classification keyword extraction 
+document"""
+
+extractor_kw_cr.extract(preprocessed_text, n=5)
+```
+
+Returns:
+```text
+[('graph-of-words', 36),
+ ('gowpy', 28),
+ ('representation', 24),
+ ('document', 24),
+ ('library', 20)]
+```
 
 #### Classification with TW-IDF: a graph-based term weighting score
 TW-IDF [[0]](#references) challenges the term independence assumption behind 
@@ -115,6 +171,9 @@ the bag-of-words model by (i) exploiting a graph-of-words representation of a
 document (here an unweighted directed graph of terms), and by (ii) leveraging 
 this new representation to replace the term frequency (TF) by graph-based term 
 weights (TW).  
+
+See this [example notebook](./examples/classification-r8-twidf.ipynb) for a 
+usage example of TW-IDF for a multi-class classification task.
 
 TW-IDF is accessible via a dedicated vectorizer:
 ```python
@@ -186,6 +245,9 @@ Classification with frequent subgraphs happens in a 3-step process:
   of graph-of-words
 1. Mining the frequent subgraphs
 1. Loading the frequent subgraphs and exploiting them for classification
+
+See this [example notebook](./examples/classification-r8-frequent_subgraphs.ipynb)
+for a usage example of frequent subgraphs for a multi-class classification task.
 
 ##### Conversion of the corpus into a collection of graph-of-words
 The first step consists in turning the corpus into a graph-of-words and collection
@@ -318,31 +380,32 @@ grid_search = GridSearchCV(pipeline,
 Detailed explanations, evaluations and discussions can be found in these papers:
 - Information retrieval (TW-IDF)
    + [0] [Graph-of-word and TW-IDF: New Approach to Ad Hoc IR](https://dl.acm.org/doi/abs/10.1145/2505515.2505671).
-     *Rousseau, François, and Michalis Vazirgiannis*.
+     *Rousseau, François, and Vazirgiannis, Michalis*.
      *Proceedings of the 22nd ACM international conference on Information & Knowledge Management*.(**CIKM 2013**)
 - Document classification with frequent subgraphs
    + [1] [Text Categorization as a Graph Classification Problem](http://www.aclweb.org/anthology/P15-1164).
-      *Rousseau, François, Emmanouil Kiagias, and Michalis Vazirgiannis*.
+      *Rousseau, François, Kiagias, Emmanouil and Vazirgiannis, Michalis*.
       *Proceedings of the 53rd Annual Meeting of the Association for Computational Linguistics and the 7th International 
       Joint Conference on Natural Language Processing* (**ACL 2015**)
 - Keyword extraction from graph-of-words
    + [2] [Main Core Retention on Graph-of-words for Single-Document Keyword Extraction](https://link.springer.com/chapter/10.1007/978-3-319-16354-3_42).
-     *Rousseau, François, and Michalis Vazirgiannis*.
+     *Rousseau, François, and Vazirgiannis, Michalis*.
      *Proceedings of the 37th European Conference on Information Retrieval*.
      (**ECIR 2015**)
    + [3] [A Graph Degeneracy-based Approach to Keyword Extraction](https://www.aclweb.org/anthology/D16-1191/).
-     *Tiwier, Antoine Tixier, Malliaros Fragkiskos, and Vazirgiannis, Michalis*.
+     *Tixier, Antoine, Malliaros, Fragkiskos, and Vazirgiannis, Michalis*.
      *Proceedings of the 2016 Conference on Empirical Methods in Natural Language Processing*.
      (**EMNLP 2016**)
    
 This library involves the following algorithms:
-- Frequent subgraph Mining (**currently not included in this library**)
+- Frequent subgraph mining (**currently not included in this library**)
    + gSpan algorithm implementation for subgraph mining: [gBolt--very fast implementation for gSpan algorithm in data mining ](https://github.com/Jokeren/gBolt)
 - Subgraph matching
    + VF2 algorithm for subgraph isomorphism matching: [VF2 algorithm for subgraph isomorphism from NetworkX](https://networkx.github.io/documentation/stable/reference/algorithms/isomorphism.vf2.html)
 - Graph degeneracy
    + [k-core decomposition with NetworkX](https://networkx.github.io/documentation/stable/reference/algorithms/core.html)
-
+   + Custom implementation of generalized k-core decomposition for weighted graph from 
+     ["Generalized Cores" V. Batagelj, M. Zaveršnik (2002)](https://arxiv.org/abs/cs/0202039)
 
 ## License
 Released under the 3-Clause BSD license (see [LICENSE file](./LICENSE))
