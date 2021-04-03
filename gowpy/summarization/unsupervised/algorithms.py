@@ -15,7 +15,7 @@ class NodeHeap:
     def add_node(self, node, weight):
         """Adds or updates a node with priority sets to its weight"""
         if node == NodeHeap.REMOVED:
-            raise Error(
+            raise Exception(
                 f'NodeHeap cannot deal with node value={NodeHeap.REMOVED}. This value is used as a default code.')
 
         if node in self.node_finder:
@@ -66,7 +66,7 @@ def core_number_weighted(g):
             for n in neighbors:
                 new_priority_n = max(core_number[current_node], graph.degree(n, weight='weight'))
                 sorted_nodes.add_node(n, new_priority_n)
-        except KeyError as e:
+        except KeyError:
             not_empty = False
 
     return core_number
