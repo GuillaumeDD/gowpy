@@ -1,5 +1,9 @@
 # gowpy
 
+[![PyPI version](https://badge.fury.io/py/gowpy.svg)](https://badge.fury.io/py/gowpy)
+[![Build Status](https://github.com/GuillaumeDD/gowpy/workflows/build/badge.svg?branch=master&event=push)](https://github.com/GuillaumeDD/gowpy/actions)
+[![GitHub license](https://img.shields.io/github/license/GuillaumeDD/gowpy)](https://github.com/GuillaumeDD/gowpy/blob/master/LICENSE)
+
 A very simple library for exploiting graph-of-words in NLP. 
 Currently at version **0.2.0**.
 
